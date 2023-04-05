@@ -1,0 +1,71 @@
+
+To download kafka on EC2 instance
+
+1) wget https://downloads.apache.org/kafka/3.4.0/kafka_2.12-3.4.0.tgz
+
+extract the kafka file from downloaded zip 
+
+2) tar -xvf kafka_2.12-3.4.0.tgz
+
+for installation of java coz kafka always runs on JVM present in machine
+
+3) sudo yum install java-1.8.0
+
+4)  java -version
+openjdk version "1.8.0_362"
+OpenJDK Runtime Environment Corretto-8.362.08.1 (build 1.8.0_362-b08)
+OpenJDK 64-Bit Server VM Corretto-8.362.08.1 (build 25.362-b08, mixed mode)
+
+5) cd kafka_2.12-3.4.0
+   bin/zookeeper-server-start.sh config/zookeeper.properties
+
+in this step we launched zookeeper in EC2 instance , after this we split the terminal and again launch EC2 server where we will run Kafka
+
+basically we Duplicate the session & enter in a new console
+
+
+6) we now start kafka server and allocate some more memory to kafka server using following command
+ 
+export KAFKA_HEAP_OPTS="-Xmx256M -Xms128M"
+
+next we go to kafka directory 
+ls
+cd kafka_2.12-3.4.0
+bin/kafka-server-start.sh config/server.properties // this command starts the kafka server instance on EC2
+
+
+we cannot access private DNS from local computer unless we are in the same network. So we need to convert the private ip to public Ip
+It is pointing to private server , change server.properties so that it can run in public IP 
+
+To do this , you can follow any of the 2 approaches shared belwo --
+Do a "sudo nano config/server.properties" - change ADVERTISED_LISTENERS to public ip of the EC2 instance
+
+
+for allowing our local machine to access EC2 machine we need to go to security inbound part in the AWS . Edit inbound and add MY ip or set it to 0.0.0.0/0 to allow all traffic .This is not the best practice as we are allowing all the traffic and is not a secured way
+
+
+but we are more focused on the data engineering part So let it be like this only.
+
+Creating the topic :
+
+bin/kafka-topics.sh --create --topic demo_test --bootstrap-server {Put the Public IP of your EC2 Instance:9092} --replication-factor 1 --partitions 1 
+//here above the demo_test is the topic name which we are creating
+
+bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092
+
+To start producer :
+
+bin/kafka-console-producer.sh --topic demo-topic --bootstrap-server Localhost:9092
+
+To start consumer :
+
+bin/kafka-console-consumer.sh --topic demo-topic --bootstrap-server Localhost:9092
+
+we cannot pay for realtime streaming API for stock market analaysis so we will be simulating it with a pre defined csv file consisting of stock related data
+ 
+now to do analysis on the data that we got from the consumer we need to store it in the cloud storage first in AWS S3
+
+for this we need to create a bucket 
+
+to upload the data from consumer.ipynb to S3 bucket we need to add a package known as s3fs.
+
